@@ -1,0 +1,33 @@
+{
+"id": 277,
+"type": "download",
+"feed_entries":[
+{
+"feed_index": "2494b3f7-1512-4156-8778-c8a6caa5e68f",
+"document_model": "coda",
+"metadata":{
+"movement_count": 5,
+"last_statement_number": 1,
+"extension_zone": "ZqG",
+"new_balance_date": "2017-04-28",
+"bank_id": "CDBXBE33",
+"currency": "EUR",
+"iban": "BE40974080878037",
+"first_statement_number": 1
+}
+},
+{
+"feed_index": "6b8f8082-888a-4479-a1a7-2b29f0943f5c",
+"document_model": "coda",
+"metadata":{
+"movement_count": 5,
+"last_statement_number": 1,
+"extension_zone": "Kt5",
+"new_balance_date": "2017-04-28",
+"bank_id": "CDBXBE34",
+"currency": "EUR",
+"iban": "BE16977035728262",
+"first_statement_number": 1
+}
+}            ]
+           }
