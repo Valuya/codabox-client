@@ -1,4 +1,4 @@
-package be.valuya.codabox;
+package be.valuya.codabox.domain;
 
 import javax.json.bind.annotation.JsonbProperty;
 import java.util.List;
