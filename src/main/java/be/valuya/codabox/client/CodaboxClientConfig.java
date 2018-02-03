@@ -4,7 +4,7 @@ import java.net.URI;
 
 public class CodaboxClientConfig {
 
-    private URI baseUri;
+    private URI baseUri = URI.create("https://sandbox-api.codabox.com");
     private String softwareCompany;
     private String username;
     private char[] password;

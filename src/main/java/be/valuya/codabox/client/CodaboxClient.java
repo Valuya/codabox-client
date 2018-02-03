@@ -1,6 +1,7 @@
 package be.valuya.codabox.client;
 
 import be.valuya.codabox.domain.Feed;
+import be.valuya.codabox.domain.FeedClient;
 import be.valuya.codabox.domain.PodClient;
 import be.valuya.codabox.jaxrs.BasicAuthenticator;
 import be.valuya.codabox.jaxrs.JsonbJaxrsMessageBodyReader;
@@ -15,6 +16,7 @@ import java.net.URI;
 
 public class CodaboxClient {
 
+    public static final String SOFTWARE_COMPANY_HEADER_NAME = "X-Software-Company";
     private final CodaboxClientConfig codaboxClientConfig;
     private Client client;
 
@@ -23,29 +25,38 @@ public class CodaboxClient {
         initClient();
     }
 
-    public Feed getFeed(long feedId) {
+    public PodClient getPodClient() {
+        String softwareCompany = codaboxClientConfig.getSoftwareCompany();
+        return getWebTarget()
+                .path("delivery")
+                .path("pod-client")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
+                .get(PodClient.class);
+    }
+
+    public Feed getFeed(FeedClient feedClient) {
+        String softwareCompany = codaboxClientConfig.getSoftwareCompany();
+        int feedId = feedClient.getId();
         return getWebTarget()
                 .path("delivery")
                 .path("feed")
-                .resolveTemplate("{0}", feedId)
+                .path("{feedId}")
+                .resolveTemplate("feedId", feedId)
                 .request(MediaType.APPLICATION_JSON_TYPE)
+                .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
                 .get(Feed.class);
-    }
-
-    public PodClient getPodClient() {
-        return getWebTarget()
-                .path("pod-client")
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(PodClient.class);
     }
 
     private WebTarget getWebTarget() {
         URI baseUri = codaboxClientConfig.getBaseUri();
-        return client.target(baseUri);
+        return client.target(baseUri)
+                .path("v2");
     }
 
     private void initClient() {
-        client = ClientBuilder.newClient();
+        client = ClientBuilder.newBuilder()
+                .build();
         JsonbConfig jsonbConfig = new JsonbConfig();
 
         JsonbJaxrsMessageBodyReader<Object> jsonbJaxrsMessageBodyReader = new JsonbJaxrsMessageBodyReader<>(jsonbConfig);
