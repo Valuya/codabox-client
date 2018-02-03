@@ -32,8 +32,9 @@ public class CodaboxClientTest {
         String baseUriStr = System.getProperty("codabox.client.url");
         URI baseUri = URI.create(baseUriStr);
 
-        CodaboxClientConfig codaboxClientConfig = new CodaboxClientConfig();
         char[] passwordChars = password.toCharArray();
+
+        CodaboxClientConfig codaboxClientConfig = new CodaboxClientConfig();
         codaboxClientConfig.setUsername(username);
         codaboxClientConfig.setPassword(passwordChars);
         codaboxClientConfig.setSoftwareCompany(softwareCompany);
