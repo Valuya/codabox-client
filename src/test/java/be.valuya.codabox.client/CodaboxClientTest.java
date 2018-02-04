@@ -4,8 +4,12 @@ import be.valuya.codabox.domain.AllowedFormats;
 import be.valuya.codabox.domain.Feed;
 import be.valuya.codabox.domain.FeedClient;
 import be.valuya.codabox.domain.FeedEntry;
+import be.valuya.codabox.domain.Fiduciary;
+import be.valuya.codabox.domain.LegalEntity;
 import be.valuya.codabox.domain.Metadata;
 import be.valuya.codabox.domain.PodClient;
+import be.valuya.codabox.domain.Service;
+import be.valuya.codabox.domain.Software;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -13,7 +17,11 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -80,12 +88,78 @@ public class CodaboxClientTest {
     }
 
     @Test
+    public void testGetFiduciaries() {
+        List<Fiduciary> fiduciaries = codaboxClient.getFiduciaries();
+        fiduciaries.forEach(this::printFiduciary);
+    }
+
+    @Test
     public void testGetFeed() {
         PodClient podClient = codaboxClient.getPodClient();
         List<FeedClient> feedClients = podClient.getFeedClients();
         feedClients.stream()
                 .findFirst()
                 .ifPresent(this::testGetFeed);
+    }
+
+    @Test
+    public void testDownload() {
+        PodClient podClient = codaboxClient.getPodClient();
+        List<FeedClient> feedClients = podClient.getFeedClients();
+        feedClients.stream()
+                .findFirst()
+                .ifPresent(this::downloadFromFeed);
+    }
+
+    private void printFiduciary(Fiduciary fiduciary) {
+        String id = fiduciary.getId();
+        String name = fiduciary.getName();
+        String contactEmail = fiduciary.getContactEmail();
+        String contactName = fiduciary.getContactName();
+        String language = fiduciary.getLanguage();
+        Boolean allowsClientDelivery = fiduciary.getAllowsClientDelivery();
+        Boolean allowsDoccleDelivery = fiduciary.getAllowsDoccleDelivery();
+        Boolean allowsSocialMandates = fiduciary.getAllowsSocialMandates();
+        LegalEntity legalEntity = fiduciary.getLegalEntity();
+        List<Service> services = fiduciary.getServices();
+        Software software = fiduciary.getSoftware();
+        Boolean delegatesMandateDelivery = fiduciary.getDelegatesMandateDelivery();
+        String websiteUrl = fiduciary.getWebsiteUrl();
+
+        System.out.println("id: " + id);
+        System.out.println("name: " + name);
+        System.out.println("contactEmail: " + contactEmail);
+        System.out.println("contactName: " + contactName);
+        System.out.println("language: " + language);
+        System.out.println("allowsClientDelivery: " + allowsClientDelivery);
+        System.out.println("allowsDoccleDelivery: " + allowsDoccleDelivery);
+        System.out.println("allowsSocialMandates: " + allowsSocialMandates);
+        System.out.println("legalEntity: " + legalEntity);
+        System.out.println("services: " + services);
+        System.out.println("software: " + software);
+        System.out.println("delegatesMandateDelivery: " + delegatesMandateDelivery);
+        System.out.println("websiteUrl: " + websiteUrl);
+    }
+
+    private void downloadFromFeed(FeedClient feedClient) {
+        Feed feed = codaboxClient.getFeed(feedClient);
+        feed.getFeedEntries()
+                .stream()
+                .findFirst()
+                .ifPresent(this::downloadFeedEntry);
+    }
+
+    private void downloadFeedEntry(FeedEntry feedEntry) {
+        String feedIndex = feedEntry.getFeedIndex();
+        try (InputStream inputStream = codaboxClient.download(feedIndex, "pdf")) {
+            int availableByteCount = inputStream.available();
+            byte[] targetArray = new byte[availableByteCount];
+            inputStream.read(targetArray);
+            Path tempFile = Files.createTempFile("codabox_", ".pdf");
+            Files.write(tempFile, targetArray);
+        } catch (IOException exception) {
+            throw new RuntimeException(exception);
+        }
     }
 
     private void testGetFeed(FeedClient feedClient) {

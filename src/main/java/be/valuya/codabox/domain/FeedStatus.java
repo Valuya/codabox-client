@@ -8,22 +8,25 @@ import javax.json.bind.annotation.JsonbPropertyOrder;
 })
 public class FeedStatus {
 
+    @JsonbProperty("id")
+    private String feedId;
     @JsonbProperty("feed_offset")
     private String feedOffset;
 
-    @JsonbProperty("feed_offset")
+    public String getFeedId() {
+        return feedId;
+    }
+
+    public void setFeedId(String feedId) {
+        this.feedId = feedId;
+    }
+
     public String getFeedOffset() {
         return feedOffset;
     }
 
-    @JsonbProperty("feed_offset")
     public void setFeedOffset(String feedOffset) {
         this.feedOffset = feedOffset;
-    }
-
-    public FeedStatus withFeedOffset(String feedOffset) {
-        this.feedOffset = feedOffset;
-        return this;
     }
 
 }
