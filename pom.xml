@@ -33,6 +33,13 @@
                     </dependency>
                 </dependencies>
                 <configuration>
+                    <systemPropertyVariables>
+                        <codabox.client.url>${codabox.client.url}</codabox.client.url>
+                        <codabox.client.username>${codabox.client.username}</codabox.client.username>
+                        <codabox.client.password>${codabox.client.password}</codabox.client.password>
+                        <codabox.client.software.company>${codabox.client.software.company}</codabox.client.software.company>
+
+                    </systemPropertyVariables>
                     <systemProperties>
                         <property>
                             <name>codabox.client.url</name>
