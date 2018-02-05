@@ -106,7 +106,18 @@ public class CodaboxClientTest {
         feedEntries
                 .stream()
                 .findFirst()
-                .ifPresent(this::downloadFeedEntry);
+                .ifPresent(feedEntry -> processFeedEntry(feedClient, feedEntry));
+    }
+
+    private void processFeedEntry(FeedClient feedClient, FeedEntry feedEntry) {
+        downloadFeedEntry(feedEntry);
+        markAsDownloaded(feedClient, feedEntry);
+    }
+
+    private void markAsDownloaded(FeedClient feedClient, FeedEntry feedEntry) {
+        String feedIndex = feedEntry.getFeedIndex();
+        Integer feedId = feedClient.getId();
+        codaboxClient.markAsDownloaded(feedId, feedIndex);
     }
 
     private void downloadFeedEntry(FeedEntry feedEntry) {

@@ -9,15 +9,15 @@ import javax.json.bind.annotation.JsonbPropertyOrder;
 public class FeedStatus {
 
     @JsonbProperty("id")
-    private String feedId;
+    private Integer feedId;
     @JsonbProperty("feed_offset")
     private String feedOffset;
 
-    public String getFeedId() {
+    public Integer getFeedId() {
         return feedId;
     }
 
-    public void setFeedId(String feedId) {
+    public void setFeedId(Integer feedId) {
         this.feedId = feedId;
     }
 

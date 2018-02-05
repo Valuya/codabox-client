@@ -92,7 +92,7 @@ public class CodaboxClient {
                 .get(InputStream.class);
     }
 
-    public FeedStatus markAsDownloaded(String feedId, String feedOffset) {
+    public FeedStatus markAsDownloaded(Integer feedId, String feedOffset) {
         FeedStatus feedStatus = new FeedStatus();
         feedStatus.setFeedId(feedId);
         feedStatus.setFeedOffset(feedOffset);
@@ -101,7 +101,7 @@ public class CodaboxClient {
 
     public FeedStatus markAsDownloaded(FeedStatus feedStatus) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
-        String feedId = feedStatus.getFeedId();
+        Integer feedId = feedStatus.getFeedId();
         Entity<FeedStatus> feedStatusEntity = Entity.entity(feedStatus, MediaType.APPLICATION_JSON_TYPE);
         return getWebTarget()
                 .path("delivery")
