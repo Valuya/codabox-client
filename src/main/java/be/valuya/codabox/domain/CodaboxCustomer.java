@@ -28,7 +28,7 @@ import java.util.List;
         "zoomit_ibans",
         "mycodabox_access_state"
 })
-public class Client {
+public class CodaboxCustomer {
 
     @JsonbProperty("id")
     private String id;

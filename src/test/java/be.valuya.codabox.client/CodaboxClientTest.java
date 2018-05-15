@@ -1,10 +1,13 @@
 package be.valuya.codabox.client;
 
-import be.valuya.codabox.domain.AllowedFormats;
+import be.valuya.codabox.domain.CodaboxCustomer;
+import be.valuya.codabox.domain.CodaboxFormat;
+import be.valuya.codabox.domain.CodaboxFormatJsonbAdapter;
 import be.valuya.codabox.domain.Feed;
 import be.valuya.codabox.domain.FeedClient;
 import be.valuya.codabox.domain.FeedEntry;
 import be.valuya.codabox.domain.Fiduciary;
+import be.valuya.codabox.domain.KnownCodaboxFormat;
 import be.valuya.codabox.domain.LegalEntity;
 import be.valuya.codabox.domain.Metadata;
 import be.valuya.codabox.domain.PodClient;
@@ -14,12 +17,22 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -50,18 +63,38 @@ public class CodaboxClientTest {
     }
 
     @Test
+    public void testDeserializeGetPodClient() throws IOException, URISyntaxException {
+        ClassLoader classLoader = this.getClass().getClassLoader();
+        URL resourceUrl = classLoader.getResource("example/pod_client_example.json");
+        URI resourceUri = resourceUrl.toURI();
+        Path resourcePath = Paths.get(resourceUri);
+        List<String> jsonLines = Files.readAllLines(resourcePath, StandardCharsets.UTF_8);
+        String podClientJson = jsonLines.stream()
+                .collect(Collectors.joining(" "));
+        JsonbConfig jsonbConfig = new JsonbConfig();
+        CodaboxFormatJsonbAdapter codaboxFormatJsonbAdapter = new CodaboxFormatJsonbAdapter();
+        jsonbConfig.withAdapters(codaboxFormatJsonbAdapter);
+        Jsonb jsonb = JsonbBuilder.create(jsonbConfig);
+        PodClient podClient = jsonb.fromJson(podClientJson, PodClient.class);
+        Assertions.assertNotNull(podClient);
+        Map<String, List<CodaboxFormat>> documentTypeFormatListMap = podClient.getDocumentTypeFormatListMap();
+        Set<String> documentTypes = documentTypeFormatListMap.keySet();
+        Assertions.assertFalse(documentTypes.isEmpty());
+    }
+
+    @Test
     public void testGetPodClient() {
         PodClient podClient = codaboxClient.getPodClient();
         Integer fetchDelay = podClient.getFetchDelay();
-        AllowedFormats allowedFormats = podClient.getAllowedFormats();
+        Map<String, List<CodaboxFormat>> documentTypeFormatListMap = podClient.getDocumentTypeFormatListMap();
         List<FeedClient> feedClients = podClient.getFeedClients();
 
-        List<String> allowedFormatsCoda = allowedFormats.getCoda();
+        List<CodaboxFormat> allowedFormatsCoda = documentTypeFormatListMap.get("coda");
         Assertions.assertFalse(allowedFormatsCoda.isEmpty(), "should have at least one allowed format for coda");
 
         LOGGER.info("fetchDelay : " + fetchDelay);
 
-        printAllowedFormats(allowedFormats);
+        printAllowedFormats(documentTypeFormatListMap);
 
         feedClients.forEach(this::printFeedClient);
     }
@@ -70,9 +103,18 @@ public class CodaboxClientTest {
     public void testGetFiduciaries() {
         List<Fiduciary> fiduciaries = codaboxClient.getFiduciaries();
 
-        Assertions.assertFalse(fiduciaries.isEmpty(), "should find at list one fiduciary");
+        Assertions.assertFalse(fiduciaries.isEmpty(), "should find at least one fiduciary");
 
         fiduciaries.forEach(this::printFiduciary);
+    }
+
+    @Test
+    public void testGetCustomers() {
+        List<CodaboxCustomer> customers = codaboxClient.getCustomers();
+
+        Assertions.assertFalse(customers.isEmpty(), "should find at least one customer");
+
+        customers.forEach(this::printCustomer);
     }
 
     @Test
@@ -110,6 +152,7 @@ public class CodaboxClientTest {
     }
 
     private void processFeedEntry(FeedClient feedClient, FeedEntry feedEntry) {
+        printFeedEntry(feedEntry);
         downloadFeedEntry(feedEntry);
         markAsDownloaded(feedClient, feedEntry);
     }
@@ -122,7 +165,7 @@ public class CodaboxClientTest {
 
     private void downloadFeedEntry(FeedEntry feedEntry) {
         String feedIndex = feedEntry.getFeedIndex();
-        try (InputStream inputStream = codaboxClient.download(feedIndex, "pdf")) {
+        try (InputStream inputStream = codaboxClient.download(feedIndex, KnownCodaboxFormat.PDF)) {
             int availableByteCount = inputStream.available();
             byte[] targetArray = new byte[availableByteCount];
             inputStream.read(targetArray);
@@ -175,6 +218,24 @@ public class CodaboxClientTest {
         services.forEach(this::printService);
     }
 
+    private void printCustomer(CodaboxCustomer codaboxCustomer) {
+        String id = codaboxCustomer.getId();
+        String contactEmail = codaboxCustomer.getContactEmail();
+        String contactName = codaboxCustomer.getContactName();
+        String language = codaboxCustomer.getLanguage();
+        LegalEntity legalEntity = codaboxCustomer.getLegalEntity();
+        List<Service> services = codaboxCustomer.getServices();
+
+        LOGGER.info("id: " + id);
+        LOGGER.info("contactEmail: " + contactEmail);
+        LOGGER.info("contactName: " + contactName);
+        LOGGER.info("language: " + language);
+        LOGGER.info("legalEntity: " + legalEntity);
+
+        LOGGER.info("services: ");
+        services.forEach(this::printService);
+    }
+
     private void printFeed(Feed feed) {
         Integer id = feed.getId();
         String type = feed.getType();
@@ -213,7 +274,7 @@ public class CodaboxClientTest {
         String iban = metadata.getIban();
         Integer lastStatementNumber = metadata.getLastStatementNumber();
         Integer movementCount = metadata.getMovementCount();
-        String newBalanceDate = metadata.getNewBalanceDate();
+        LocalDate newBalanceDate = metadata.getNewBalanceDate();
 
         LOGGER.info("    bankId: " + bankId);
         LOGGER.info("    currency: " + currency);
@@ -225,21 +286,18 @@ public class CodaboxClientTest {
         LOGGER.info("    newBalanceDate: " + newBalanceDate);
     }
 
-    private void printAllowedFormats(AllowedFormats allowedFormats) {
-        List<String> expenseFormats = allowedFormats.getExpense();
-        List<String> purchaseInvoiceFormats = allowedFormats.getPurchaseInvoice();
-        List<String> salesInvoiceFormats = allowedFormats.getSalesInvoice();
-        List<String> codaFormats = allowedFormats.getCoda();
-        List<String> sodaFormats = allowedFormats.getSoda();
-
-        Collector<CharSequence, ?, String> hyphenJoiningCollector = Collectors.joining(" - ");
-
+    private void printAllowedFormats(Map<String, List<CodaboxFormat>> documentTypeFormatListMap) {
         LOGGER.info("allowedFormats:");
-        LOGGER.info("  expenseFormats : " + expenseFormats.stream().collect(hyphenJoiningCollector));
-        LOGGER.info("  purchaseInvoiceFormats : " + purchaseInvoiceFormats.stream().collect(hyphenJoiningCollector));
-        LOGGER.info("  salesInvoiceFormats : " + salesInvoiceFormats.stream().collect(hyphenJoiningCollector));
-        LOGGER.info("  codaFormats : " + codaFormats.stream().collect(hyphenJoiningCollector));
-        LOGGER.info("  sodaFormats : " + sodaFormats.stream().collect(hyphenJoiningCollector));
+        documentTypeFormatListMap.forEach((documentType, formats) -> printAllowedFormats(documentType, formats));
+    }
+
+    private void printAllowedFormats(String documentType, List<CodaboxFormat> formats) {
+        Collector<CharSequence, ?, String> hyphenJoiningCollector = Collectors.joining(" - ");
+        String allowedFormatListString = formats.stream()
+                .map(CodaboxFormat::getFormatName)
+                .collect(hyphenJoiningCollector);
+
+        LOGGER.info("  " + documentType + ": " + allowedFormatListString);
     }
 
     private void printFeedClient(FeedClient feedClient) {

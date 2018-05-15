@@ -3,6 +3,7 @@ package be.valuya.codabox.domain;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbPropertyOrder;
 import java.util.List;
+import java.util.Map;
 
 @JsonbPropertyOrder({
         "id",
@@ -17,7 +18,7 @@ public class PodClient {
     @JsonbProperty("fetch_delay")
     private Integer fetchDelay;
     @JsonbProperty("allowed_formats")
-    private AllowedFormats allowedFormats;
+    private Map<String, List<CodaboxFormat>> documentTypeFormatListMap;
     @JsonbProperty("feed_clients")
     private List<FeedClient> feedClients;
 
@@ -41,14 +42,12 @@ public class PodClient {
         this.fetchDelay = fetchDelay;
     }
 
-    @JsonbProperty("allowed_formats")
-    public AllowedFormats getAllowedFormats() {
-        return allowedFormats;
+    public Map<String, List<CodaboxFormat>> getDocumentTypeFormatListMap() {
+        return documentTypeFormatListMap;
     }
 
-    @JsonbProperty("allowed_formats")
-    public void setAllowedFormats(AllowedFormats allowedFormats) {
-        this.allowedFormats = allowedFormats;
+    public void setDocumentTypeFormatListMap(Map<String, List<CodaboxFormat>> documentTypeFormatListMap) {
+        this.documentTypeFormatListMap = documentTypeFormatListMap;
     }
 
     @JsonbProperty("feed_clients")

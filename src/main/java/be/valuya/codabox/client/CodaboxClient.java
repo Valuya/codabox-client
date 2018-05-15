@@ -1,5 +1,8 @@
 package be.valuya.codabox.client;
 
+import be.valuya.codabox.domain.CodaboxCustomer;
+import be.valuya.codabox.domain.CodaboxFormat;
+import be.valuya.codabox.domain.CodaboxFormatJsonbAdapter;
 import be.valuya.codabox.domain.Feed;
 import be.valuya.codabox.domain.FeedClient;
 import be.valuya.codabox.domain.FeedStatus;
@@ -14,6 +17,7 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
@@ -22,16 +26,23 @@ import java.util.List;
 
 public class CodaboxClient {
 
-    public static final String SOFTWARE_COMPANY_HEADER_NAME = "X-Software-Company";
-    public static final GenericType<List<Fiduciary>> FIDUCIARY_LIST_TYPE = new GenericType<List<Fiduciary>>() {
+    private static final String SOFTWARE_COMPANY_HEADER_NAME = "X-Software-Company";
+    private static final GenericType<List<Fiduciary>> FIDUCIARY_LIST_TYPE = new GenericType<List<Fiduciary>>() {
     };
-    public static final String DOWNLOAD_FEED_TYPE_NAME = "download";
+    private static final GenericType<List<CodaboxCustomer>> CUSTOMER_LIST_TYPE = new GenericType<List<CodaboxCustomer>>() {
+    };
+    private static final String DOWNLOAD_FEED_TYPE_NAME = "download";
     private final CodaboxClientConfig codaboxClientConfig;
     private Client client;
 
+    public CodaboxClient(CodaboxClientConfig codaboxClientConfig, Configuration jaxRsConfiguration) {
+        this.codaboxClientConfig = codaboxClientConfig;
+        createClient(jaxRsConfiguration);
+    }
+
     public CodaboxClient(CodaboxClientConfig codaboxClientConfig) {
         this.codaboxClientConfig = codaboxClientConfig;
-        initClient();
+        createClient();
     }
 
     public PodClient getPodClient() {
@@ -76,17 +87,38 @@ public class CodaboxClient {
                 .get(Fiduciary.class);
     }
 
-    public InputStream download(String feedIndex, String format) {
-        return download(DOWNLOAD_FEED_TYPE_NAME, feedIndex, format);
+    public List<CodaboxCustomer> getCustomers() {
+        String softwareCompany = codaboxClientConfig.getSoftwareCompany();
+        return getWebTarget()
+                .path("clients")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
+                .get(CUSTOMER_LIST_TYPE);
     }
 
-    public InputStream download(String feedTypeName, String feedIndex, String format) {
+    public CodaboxCustomer getCodaboxCustomer(String customerId) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
+        return getWebTarget()
+                .path("clients")
+                .path(customerId)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
+                .get(CodaboxCustomer.class);
+    }
+
+    public InputStream download(String feedIndex, CodaboxFormat codaboxFormat) {
+        return download(DOWNLOAD_FEED_TYPE_NAME, feedIndex, codaboxFormat);
+    }
+
+    public InputStream download(String feedTypeName, String feedIndex, CodaboxFormat codaboxFormat) {
+        String softwareCompany = codaboxClientConfig.getSoftwareCompany();
+        String formatName = codaboxFormat.getFormatName();
+
         return getWebTarget()
                 .path("delivery")
                 .path(feedTypeName)
                 .path(feedIndex)
-                .path(format)
+                .path(formatName)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
                 .get(InputStream.class);
@@ -119,16 +151,31 @@ public class CodaboxClient {
                 .path("v2");
     }
 
-    private void initClient() {
+    private void createClient(Configuration jaxRsConfiguration) {
+        client = ClientBuilder.newBuilder()
+                .withConfig(jaxRsConfiguration)
+                .build();
+
+        init();
+    }
+
+    private void createClient() {
         client = ClientBuilder.newBuilder()
                 .build();
+
+        init();
+    }
+
+    private void init() {
         JsonbConfig jsonbConfig = new JsonbConfig();
+        CodaboxFormatJsonbAdapter codaboxFormatJsonbAdapter = new CodaboxFormatJsonbAdapter();
+        jsonbConfig.withAdapters(codaboxFormatJsonbAdapter);
 
         JsonbJaxrsMessageBodyReader<Object> jsonbJaxrsMessageBodyReader = new JsonbJaxrsMessageBodyReader<>(jsonbConfig);
-        client.register(jsonbJaxrsMessageBodyReader);
+        client.register(jsonbJaxrsMessageBodyReader, 0);
 
         JsonbJaxrsMessageBodyWriter<Object> jsonbJaxrsMessageBodyWriter = new JsonbJaxrsMessageBodyWriter<>(jsonbConfig);
-        client.register(jsonbJaxrsMessageBodyWriter);
+        client.register(jsonbJaxrsMessageBodyWriter, 0);
 
         String username = codaboxClientConfig.getUsername();
         char[] password = codaboxClientConfig.getPassword();

@@ -2,6 +2,7 @@ package be.valuya.codabox.domain;
 
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbPropertyOrder;
+import java.time.LocalDate;
 
 @JsonbPropertyOrder({
         "movement_count",
@@ -22,7 +23,7 @@ public class Metadata {
     @JsonbProperty("extension_zone")
     private String extensionZone;
     @JsonbProperty("new_balance_date")
-    private String newBalanceDate;
+    private LocalDate newBalanceDate;
     @JsonbProperty("bank_id")
     private String bankId;
     @JsonbProperty("currency")
@@ -63,12 +64,12 @@ public class Metadata {
     }
 
     @JsonbProperty("new_balance_date")
-    public String getNewBalanceDate() {
+    public LocalDate getNewBalanceDate() {
         return newBalanceDate;
     }
 
     @JsonbProperty("new_balance_date")
-    public void setNewBalanceDate(String newBalanceDate) {
+    public void setNewBalanceDate(LocalDate newBalanceDate) {
         this.newBalanceDate = newBalanceDate;
     }
 
