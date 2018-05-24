@@ -119,6 +119,11 @@ public class CodaboxClientTest {
 
     @Test
     public void testGetFeed() {
+        testGetFeed(false);
+        testGetFeed(true);
+    }
+
+    private void testGetFeed(boolean redelivery) {
         PodClient podClient = codaboxClient.getPodClient();
 
         List<FeedClient> feedClients = podClient.getFeedClients();
@@ -126,46 +131,54 @@ public class CodaboxClientTest {
 
         feedClients.stream()
                 .findFirst()
-                .ifPresent(this::testGetFeed);
+                .ifPresent(feedClient -> testGetFeed(feedClient, redelivery));
     }
 
     @Test
     public void testDownload() {
+        testDownload(false, true);
+        testDownload(true, false);
+    }
+
+    private void testDownload(boolean redelivery, boolean entriesExpected) {
         PodClient podClient = codaboxClient.getPodClient();
         List<FeedClient> feedClients = podClient.getFeedClients();
 
         feedClients.stream()
                 .findFirst()
-                .ifPresent(this::testDownloadFromFeed);
+                .ifPresent(feedClient -> testDownloadFromFeed(feedClient, redelivery, entriesExpected));
     }
 
-    private void testDownloadFromFeed(FeedClient feedClient) {
-        Feed feed = codaboxClient.getFeed(feedClient);
+    private void testDownloadFromFeed(FeedClient feedClient, boolean redelivery, boolean entriesExpected) {
+        Feed feed = codaboxClient.getFeed(feedClient, redelivery);
         List<FeedEntry> feedEntries = feed.getFeedEntries();
 
+        if (!entriesExpected) {
+            return;
+        }
         Assertions.assertFalse(feedEntries.isEmpty(), "should have at least one feed entry");
 
         feedEntries
                 .stream()
                 .findFirst()
-                .ifPresent(feedEntry -> processFeedEntry(feedClient, feedEntry));
+                .ifPresent(feedEntry -> processFeedEntry(feedClient, feedEntry, redelivery));
     }
 
-    private void processFeedEntry(FeedClient feedClient, FeedEntry feedEntry) {
+    private void processFeedEntry(FeedClient feedClient, FeedEntry feedEntry, boolean redelivery) {
         printFeedEntry(feedEntry);
-        downloadFeedEntry(feedEntry);
-        markAsDownloaded(feedClient, feedEntry);
+        downloadFeedEntry(feedEntry, redelivery);
+        markAsDownloaded(feedClient, feedEntry, redelivery);
     }
 
-    private void markAsDownloaded(FeedClient feedClient, FeedEntry feedEntry) {
+    private void markAsDownloaded(FeedClient feedClient, FeedEntry feedEntry, boolean redelivery) {
         String feedIndex = feedEntry.getFeedIndex();
         Integer feedId = feedClient.getId();
-        codaboxClient.markAsDownloaded(feedId, feedIndex);
+        codaboxClient.markAsDownloaded(feedId, feedIndex, redelivery);
     }
 
-    private void downloadFeedEntry(FeedEntry feedEntry) {
+    private void downloadFeedEntry(FeedEntry feedEntry, boolean redownload) {
         String feedIndex = feedEntry.getFeedIndex();
-        try (InputStream inputStream = codaboxClient.download(feedIndex, KnownCodaboxFormat.PDF)) {
+        try (InputStream inputStream = codaboxClient.download(redownload, feedIndex, KnownCodaboxFormat.PDF)) {
             int availableByteCount = inputStream.available();
             byte[] targetArray = new byte[availableByteCount];
             inputStream.read(targetArray);
@@ -176,8 +189,8 @@ public class CodaboxClientTest {
         }
     }
 
-    private void testGetFeed(FeedClient feedClient) {
-        Feed feed = codaboxClient.getFeed(feedClient);
+    private void testGetFeed(FeedClient feedClient, boolean redelivery) {
+        Feed feed = codaboxClient.getFeed(feedClient, redelivery);
         Assertions.assertNotNull(feed, "should get some feed");
 
         Integer feedId = feed.getId();

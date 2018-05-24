@@ -31,7 +31,10 @@ public class CodaboxClient {
     };
     private static final GenericType<List<CodaboxCustomer>> CUSTOMER_LIST_TYPE = new GenericType<List<CodaboxCustomer>>() {
     };
-    private static final String DOWNLOAD_FEED_TYPE_NAME = "download";
+    private static final String DOWNLOAD_CHANNEL_NAME = "download";
+    private static final String REDOWNLOAD_CHANNEL_NAME = "redownload";
+    private static final String DOWNLOAD_FEED_NAME = "feed";
+    private static final String REDOWNLOAD_FEED_NAME = "redownload-feed";
     private final CodaboxClientConfig codaboxClientConfig;
     private Client client;
 
@@ -47,6 +50,7 @@ public class CodaboxClient {
 
     public PodClient getPodClient() {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
+
         return getWebTarget()
                 .path("delivery")
                 .path("pod-client")
@@ -56,11 +60,18 @@ public class CodaboxClient {
     }
 
     public Feed getFeed(FeedClient feedClient) {
+        return getFeed(feedClient, false);
+    }
+
+    public Feed getFeed(FeedClient feedClient, boolean redownload) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         int feedId = feedClient.getId();
+
+        String downloadFeedName = getDownloadFeedName(redownload);
+
         return getWebTarget()
                 .path("delivery")
-                .path("feed")
+                .path(downloadFeedName)
                 .path("{feedId}")
                 .resolveTemplate("feedId", feedId)
                 .request(MediaType.APPLICATION_JSON_TYPE)
@@ -106,17 +117,15 @@ public class CodaboxClient {
                 .get(CodaboxCustomer.class);
     }
 
-    public InputStream download(String feedIndex, CodaboxFormat codaboxFormat) {
-        return download(DOWNLOAD_FEED_TYPE_NAME, feedIndex, codaboxFormat);
-    }
-
-    public InputStream download(String feedTypeName, String feedIndex, CodaboxFormat codaboxFormat) {
+    public InputStream download(boolean redownload, String feedIndex, CodaboxFormat codaboxFormat) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         String formatName = codaboxFormat.getFormatName();
 
+        String downloadChannelName = getDownloadChannelName(redownload);
+
         return getWebTarget()
                 .path("delivery")
-                .path(feedTypeName)
+                .path(downloadChannelName)
                 .path(feedIndex)
                 .path(formatName)
                 .request(MediaType.APPLICATION_JSON_TYPE)
@@ -124,20 +133,23 @@ public class CodaboxClient {
                 .get(InputStream.class);
     }
 
-    public FeedStatus markAsDownloaded(Integer feedId, String feedOffset) {
+    public FeedStatus markAsDownloaded(Integer feedId, String feedOffset, boolean redelivery) {
         FeedStatus feedStatus = new FeedStatus();
         feedStatus.setFeedId(feedId);
         feedStatus.setFeedOffset(feedOffset);
-        return markAsDownloaded(feedStatus);
+        return markAsDownloaded(feedStatus, redelivery);
     }
 
-    public FeedStatus markAsDownloaded(FeedStatus feedStatus) {
+    public FeedStatus markAsDownloaded(FeedStatus feedStatus, boolean redownload) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         Integer feedId = feedStatus.getFeedId();
         Entity<FeedStatus> feedStatusEntity = Entity.entity(feedStatus, MediaType.APPLICATION_JSON_TYPE);
+
+        String downloadFeedName = getDownloadFeedName(redownload);
+
         return getWebTarget()
                 .path("delivery")
-                .path("feed")
+                .path(downloadFeedName)
                 .path("{feedId}")
                 .resolveTemplate("feedId", feedId)
                 .request(MediaType.APPLICATION_JSON_TYPE)
@@ -183,4 +195,18 @@ public class CodaboxClient {
         client.register(basicAuthenticator);
     }
 
+    private String getDownloadFeedName(boolean redownload) {
+        if (redownload) {
+            return REDOWNLOAD_FEED_NAME;
+        } else {
+            return DOWNLOAD_FEED_NAME;
+        }
+    }
+    private String getDownloadChannelName(boolean redownload) {
+        if (redownload) {
+            return REDOWNLOAD_CHANNEL_NAME;
+        } else {
+            return DOWNLOAD_CHANNEL_NAME;
+        }
+    }
 }
