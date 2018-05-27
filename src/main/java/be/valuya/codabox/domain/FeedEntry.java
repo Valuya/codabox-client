@@ -15,7 +15,7 @@ public class FeedEntry {
     @JsonbProperty("document_model")
     private String documentModel;
     @JsonbProperty("metadata")
-    private Metadata metadata;
+    private CodaMetadata metadata;
 
     @JsonbProperty("feed_index")
     public String getFeedIndex() {
@@ -38,12 +38,12 @@ public class FeedEntry {
     }
 
     @JsonbProperty("metadata")
-    public Metadata getMetadata() {
+    public CodaMetadata getMetadata() {
         return metadata;
     }
 
     @JsonbProperty("metadata")
-    public void setMetadata(Metadata metadata) {
+    public void setMetadata(CodaMetadata metadata) {
         this.metadata = metadata;
     }
 

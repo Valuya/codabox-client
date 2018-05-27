@@ -31,13 +31,16 @@ public class CodaboxClient {
     };
     private static final GenericType<List<CodaboxCustomer>> CUSTOMER_LIST_TYPE = new GenericType<List<CodaboxCustomer>>() {
     };
-    private static final String DOWNLOAD_FEED_TYPE_NAME = "download";
+    private static final String DOWNLOAD_CHANNEL_NAME = "download";
+    private static final String REDELIVERY_CHANNEL_NAME = "redownload";
+    private static final String DOWNLOAD_FEED_NAME = "feed";
+    private static final String REDELIVERY_FEED_NAME = "redownload-feed";
     private final CodaboxClientConfig codaboxClientConfig;
     private Client client;
 
-    public CodaboxClient(CodaboxClientConfig codaboxClientConfig, Configuration jaxRsConfiguration) {
+    public CodaboxClient(CodaboxClientConfig codaboxClientConfig, Configuration jaxRsClientConfiguration) {
         this.codaboxClientConfig = codaboxClientConfig;
-        createClient(jaxRsConfiguration);
+        createClient(jaxRsClientConfiguration);
     }
 
     public CodaboxClient(CodaboxClientConfig codaboxClientConfig) {
@@ -47,6 +50,7 @@ public class CodaboxClient {
 
     public PodClient getPodClient() {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
+
         return getWebTarget()
                 .path("delivery")
                 .path("pod-client")
@@ -55,12 +59,15 @@ public class CodaboxClient {
                 .get(PodClient.class);
     }
 
-    public Feed getFeed(FeedClient feedClient) {
+    public Feed getFeed(FeedClient feedClient, boolean redelivery) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         int feedId = feedClient.getId();
+
+        String downloadFeedName = getFeedName(redelivery);
+
         return getWebTarget()
                 .path("delivery")
-                .path("feed")
+                .path(downloadFeedName)
                 .path("{feedId}")
                 .resolveTemplate("feedId", feedId)
                 .request(MediaType.APPLICATION_JSON_TYPE)
@@ -106,17 +113,15 @@ public class CodaboxClient {
                 .get(CodaboxCustomer.class);
     }
 
-    public InputStream download(String feedIndex, CodaboxFormat codaboxFormat) {
-        return download(DOWNLOAD_FEED_TYPE_NAME, feedIndex, codaboxFormat);
-    }
-
-    public InputStream download(String feedTypeName, String feedIndex, CodaboxFormat codaboxFormat) {
+    public InputStream download(String feedIndex, CodaboxFormat codaboxFormat, boolean redelivery) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         String formatName = codaboxFormat.getFormatName();
 
+        String downloadChannelName = getDownloadChannelName(redelivery);
+
         return getWebTarget()
                 .path("delivery")
-                .path(feedTypeName)
+                .path(downloadChannelName)
                 .path(feedIndex)
                 .path(formatName)
                 .request(MediaType.APPLICATION_JSON_TYPE)
@@ -124,20 +129,23 @@ public class CodaboxClient {
                 .get(InputStream.class);
     }
 
-    public FeedStatus markAsDownloaded(Integer feedId, String feedOffset) {
+    public FeedStatus markAsDownloaded(Integer feedId, String feedOffset, boolean redelivery) {
         FeedStatus feedStatus = new FeedStatus();
         feedStatus.setFeedId(feedId);
         feedStatus.setFeedOffset(feedOffset);
-        return markAsDownloaded(feedStatus);
+        return markAsDownloaded(feedStatus, redelivery);
     }
 
-    public FeedStatus markAsDownloaded(FeedStatus feedStatus) {
+    public FeedStatus markAsDownloaded(FeedStatus feedStatus, boolean redelivery) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         Integer feedId = feedStatus.getFeedId();
         Entity<FeedStatus> feedStatusEntity = Entity.entity(feedStatus, MediaType.APPLICATION_JSON_TYPE);
+
+        String downloadFeedName = getFeedName(redelivery);
+
         return getWebTarget()
                 .path("delivery")
-                .path("feed")
+                .path(downloadFeedName)
                 .path("{feedId}")
                 .resolveTemplate("feedId", feedId)
                 .request(MediaType.APPLICATION_JSON_TYPE)
@@ -151,9 +159,9 @@ public class CodaboxClient {
                 .path("v2");
     }
 
-    private void createClient(Configuration jaxRsConfiguration) {
+    private void createClient(Configuration jaxRsClientConfiguration) {
         client = ClientBuilder.newBuilder()
-                .withConfig(jaxRsConfiguration)
+                .withConfig(jaxRsClientConfiguration)
                 .build();
 
         init();
@@ -183,4 +191,18 @@ public class CodaboxClient {
         client.register(basicAuthenticator);
     }
 
+    private String getFeedName(boolean redelivery) {
+        if (redelivery) {
+            return REDELIVERY_FEED_NAME;
+        } else {
+            return DOWNLOAD_FEED_NAME;
+        }
+    }
+    private String getDownloadChannelName(boolean redelivery) {
+        if (redelivery) {
+            return REDELIVERY_CHANNEL_NAME;
+        } else {
+            return DOWNLOAD_CHANNEL_NAME;
+        }
+    }
 }
