@@ -32,15 +32,15 @@ public class CodaboxClient {
     private static final GenericType<List<CodaboxCustomer>> CUSTOMER_LIST_TYPE = new GenericType<List<CodaboxCustomer>>() {
     };
     private static final String DOWNLOAD_CHANNEL_NAME = "download";
-    private static final String REDOWNLOAD_CHANNEL_NAME = "redownload";
+    private static final String REDELIVERY_CHANNEL_NAME = "redownload";
     private static final String DOWNLOAD_FEED_NAME = "feed";
-    private static final String REDOWNLOAD_FEED_NAME = "redownload-feed";
+    private static final String REDELIVERY_FEED_NAME = "redownload-feed";
     private final CodaboxClientConfig codaboxClientConfig;
     private Client client;
 
-    public CodaboxClient(CodaboxClientConfig codaboxClientConfig, Configuration jaxRsConfiguration) {
+    public CodaboxClient(CodaboxClientConfig codaboxClientConfig, Configuration jaxRsClientConfiguration) {
         this.codaboxClientConfig = codaboxClientConfig;
-        createClient(jaxRsConfiguration);
+        createClient(jaxRsClientConfiguration);
     }
 
     public CodaboxClient(CodaboxClientConfig codaboxClientConfig) {
@@ -59,15 +59,11 @@ public class CodaboxClient {
                 .get(PodClient.class);
     }
 
-    public Feed getFeed(FeedClient feedClient) {
-        return getFeed(feedClient, false);
-    }
-
-    public Feed getFeed(FeedClient feedClient, boolean redownload) {
+    public Feed getFeed(FeedClient feedClient, boolean redelivery) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         int feedId = feedClient.getId();
 
-        String downloadFeedName = getDownloadFeedName(redownload);
+        String downloadFeedName = getFeedName(redelivery);
 
         return getWebTarget()
                 .path("delivery")
@@ -117,11 +113,11 @@ public class CodaboxClient {
                 .get(CodaboxCustomer.class);
     }
 
-    public InputStream download(boolean redownload, String feedIndex, CodaboxFormat codaboxFormat) {
+    public InputStream download(String feedIndex, CodaboxFormat codaboxFormat, boolean redelivery) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         String formatName = codaboxFormat.getFormatName();
 
-        String downloadChannelName = getDownloadChannelName(redownload);
+        String downloadChannelName = getDownloadChannelName(redelivery);
 
         return getWebTarget()
                 .path("delivery")
@@ -140,12 +136,12 @@ public class CodaboxClient {
         return markAsDownloaded(feedStatus, redelivery);
     }
 
-    public FeedStatus markAsDownloaded(FeedStatus feedStatus, boolean redownload) {
+    public FeedStatus markAsDownloaded(FeedStatus feedStatus, boolean redelivery) {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         Integer feedId = feedStatus.getFeedId();
         Entity<FeedStatus> feedStatusEntity = Entity.entity(feedStatus, MediaType.APPLICATION_JSON_TYPE);
 
-        String downloadFeedName = getDownloadFeedName(redownload);
+        String downloadFeedName = getFeedName(redelivery);
 
         return getWebTarget()
                 .path("delivery")
@@ -163,9 +159,9 @@ public class CodaboxClient {
                 .path("v2");
     }
 
-    private void createClient(Configuration jaxRsConfiguration) {
+    private void createClient(Configuration jaxRsClientConfiguration) {
         client = ClientBuilder.newBuilder()
-                .withConfig(jaxRsConfiguration)
+                .withConfig(jaxRsClientConfiguration)
                 .build();
 
         init();
@@ -195,16 +191,16 @@ public class CodaboxClient {
         client.register(basicAuthenticator);
     }
 
-    private String getDownloadFeedName(boolean redownload) {
-        if (redownload) {
-            return REDOWNLOAD_FEED_NAME;
+    private String getFeedName(boolean redelivery) {
+        if (redelivery) {
+            return REDELIVERY_FEED_NAME;
         } else {
             return DOWNLOAD_FEED_NAME;
         }
     }
-    private String getDownloadChannelName(boolean redownload) {
-        if (redownload) {
-            return REDOWNLOAD_CHANNEL_NAME;
+    private String getDownloadChannelName(boolean redelivery) {
+        if (redelivery) {
+            return REDELIVERY_CHANNEL_NAME;
         } else {
             return DOWNLOAD_CHANNEL_NAME;
         }

@@ -1,5 +1,6 @@
 package be.valuya.codabox.client;
 
+import be.valuya.codabox.domain.CodaMetadata;
 import be.valuya.codabox.domain.CodaboxCustomer;
 import be.valuya.codabox.domain.CodaboxFormat;
 import be.valuya.codabox.domain.CodaboxFormatJsonbAdapter;
@@ -9,7 +10,6 @@ import be.valuya.codabox.domain.FeedEntry;
 import be.valuya.codabox.domain.Fiduciary;
 import be.valuya.codabox.domain.KnownCodaboxFormat;
 import be.valuya.codabox.domain.LegalEntity;
-import be.valuya.codabox.domain.Metadata;
 import be.valuya.codabox.domain.PodClient;
 import be.valuya.codabox.domain.Service;
 import be.valuya.codabox.domain.Software;
@@ -178,7 +178,7 @@ public class CodaboxClientTest {
 
     private void downloadFeedEntry(FeedEntry feedEntry, boolean redownload) {
         String feedIndex = feedEntry.getFeedIndex();
-        try (InputStream inputStream = codaboxClient.download(redownload, feedIndex, KnownCodaboxFormat.PDF)) {
+        try (InputStream inputStream = codaboxClient.download(feedIndex, KnownCodaboxFormat.PDF, redownload)) {
             int availableByteCount = inputStream.available();
             byte[] targetArray = new byte[availableByteCount];
             inputStream.read(targetArray);
@@ -272,14 +272,14 @@ public class CodaboxClientTest {
     private void printFeedEntry(FeedEntry feedEntry) {
         String documentModel = feedEntry.getDocumentModel();
         String feedIndex = feedEntry.getFeedIndex();
-        Metadata metadata = feedEntry.getMetadata();
+        CodaMetadata metadata = feedEntry.getMetadata();
 
         LOGGER.info("  documentModel: " + documentModel);
         LOGGER.info("  feedIndex: " + feedIndex);
         printMetadata(metadata);
     }
 
-    private void printMetadata(Metadata metadata) {
+    private void printMetadata(CodaMetadata metadata) {
         String bankId = metadata.getBankId();
         String currency = metadata.getCurrency();
         String extensionZone = metadata.getExtensionZone();
