@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>be.valuya.codabox</groupId>
     <artifactId>codabox-client</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>codabox-client</name>
     <properties>
