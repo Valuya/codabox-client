@@ -53,7 +53,7 @@ public class CodaboxClient {
 
         return getWebTarget()
                 .path("delivery")
-                .path("pod-client")
+                .path("pod-client/")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
                 .get(PodClient.class);
@@ -68,7 +68,7 @@ public class CodaboxClient {
         return getWebTarget()
                 .path("delivery")
                 .path(downloadFeedName)
-                .path("{feedId}")
+                .path("{feedId}/")
                 .resolveTemplate("feedId", feedId)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
@@ -78,7 +78,7 @@ public class CodaboxClient {
     public List<Fiduciary> getFiduciaries() {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         return getWebTarget()
-                .path("fiduciaries")
+                .path("fiduciaries/")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
                 .get(FIDUCIARY_LIST_TYPE);
@@ -89,6 +89,7 @@ public class CodaboxClient {
         return getWebTarget()
                 .path("fiduciaries")
                 .path(fiduciaryId)
+                .path("/")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
                 .get(Fiduciary.class);
@@ -97,7 +98,7 @@ public class CodaboxClient {
     public List<CodaboxCustomer> getCustomers() {
         String softwareCompany = codaboxClientConfig.getSoftwareCompany();
         return getWebTarget()
-                .path("clients")
+                .path("clients/")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
                 .get(CUSTOMER_LIST_TYPE);
@@ -108,6 +109,7 @@ public class CodaboxClient {
         return getWebTarget()
                 .path("clients")
                 .path(customerId)
+                .path("/")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
                 .get(CodaboxCustomer.class);
@@ -124,6 +126,7 @@ public class CodaboxClient {
                 .path(downloadChannelName)
                 .path(feedIndex)
                 .path(formatName)
+                .path("/")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
                 .get(InputStream.class);
@@ -146,7 +149,7 @@ public class CodaboxClient {
         return getWebTarget()
                 .path("delivery")
                 .path(downloadFeedName)
-                .path("{feedId}")
+                .path("{feedId}/")
                 .resolveTemplate("feedId", feedId)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
