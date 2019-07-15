@@ -123,7 +123,7 @@ public class CodaboxClient {
 
         String downloadChannelName = getDownloadChannelName(redelivery);
 
-        Response response = getWebTarget()
+        return getWebTarget()
                 .path("delivery")
                 .path(downloadChannelName)
                 .path(feedIndex)
@@ -131,14 +131,7 @@ public class CodaboxClient {
                 .path("/")
                 .request(MediaType.WILDCARD)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
-                .get();
-        if (response.hasEntity()) {
-            Object entity = response.getEntity();
-            if (InputStream.class.isAssignableFrom(entity.getClass())) {
-                return (InputStream) entity;
-            }
-        }
-        throw new WebApplicationException("Document content could not be fetched");
+                .get(InputStream.class);
     }
 
     public FeedStatus markAsDownloaded(Integer feedId, String feedOffset, boolean redelivery) {
