@@ -13,6 +13,7 @@ import be.valuya.codabox.jaxrs.JsonbJaxrsMessageBodyReader;
 import be.valuya.codabox.jaxrs.JsonbJaxrsMessageBodyWriter;
 
 import javax.json.bind.JsonbConfig;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -20,6 +21,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;
@@ -121,15 +123,22 @@ public class CodaboxClient {
 
         String downloadChannelName = getDownloadChannelName(redelivery);
 
-        return getWebTarget()
+        Response response = getWebTarget()
                 .path("delivery")
                 .path(downloadChannelName)
                 .path(feedIndex)
                 .path(formatName)
                 .path("/")
-                .request(MediaType.APPLICATION_JSON_TYPE)
+                .request(MediaType.WILDCARD)
                 .header(SOFTWARE_COMPANY_HEADER_NAME, softwareCompany)
-                .get(InputStream.class);
+                .get();
+        if (response.hasEntity()) {
+            Object entity = response.getEntity();
+            if (InputStream.class.isAssignableFrom(entity.getClass())) {
+                return (InputStream) entity;
+            }
+        }
+        throw new WebApplicationException("Document content could not be fetched");
     }
 
     public FeedStatus markAsDownloaded(Integer feedId, String feedOffset, boolean redelivery) {
@@ -201,6 +210,7 @@ public class CodaboxClient {
             return DOWNLOAD_FEED_NAME;
         }
     }
+
     private String getDownloadChannelName(boolean redelivery) {
         if (redelivery) {
             return REDELIVERY_CHANNEL_NAME;
